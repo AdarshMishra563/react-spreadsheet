@@ -64,7 +64,7 @@ useEffect(()=>{const data=generateRandomKey();
     const key = searchParams.get('key');
     if (key) {
        setLoading(true);
-      axios.get(`http://localhost:4000/api/spreadsheet/${key}`)
+      axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${key}`)
         .then(res => {
           if (res.data.success) {
             setData(res.data.data.data);
@@ -306,7 +306,7 @@ const handleImport = async () => {
   }
 
   try {
-    const result = await axios.get(`http://localhost:4000/api/spreadsheet/${importKey}`);
+    const result = await axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${importKey}`);
     console.log(result)
     if (result.data.success) {
       setData(result.data.data.data);
