@@ -14,23 +14,13 @@ const Spreadsheet = () => {
   const [rowCount, setRowCount] = useState(50);
   const [hiddenFields, setHiddenFields] = useState([]);
   const [showHideFields, setShowHideFields] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null); 
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
- 
   const initializeData = (count) => {
     const sampleData = [
-      {
-        jobRequest: 'Value',
-        submitted: '',
-        status: '',
-        submitter: '',
-        url: '',
-        assigned: '',
-        priority: '',
-        dueDate: '',
-        estValue: '',
-        
-      },
+    
       {
         jobRequest: 'Launch social media campaign for Q3',
         submitted: 'May 15',
@@ -41,6 +31,50 @@ const Spreadsheet = () => {
         priority: 'Medium',
         dueDate: 'Jun 30',
         estValue: '$5,000'
+      },
+      {
+        jobRequest: 'Website redesign project',
+        submitted: 'Apr 20',
+        status: 'Complete',
+        submitter: 'Michael Brown',
+        url: 'example.org',
+        assigned: 'Sarah Johnson',
+        priority: 'High',
+        dueDate: 'May 31',
+        estValue: '$15,000'
+      },
+      {
+        jobRequest: 'Product launch preparation',
+        submitted: 'Jun 1',
+        status: 'Need to start',
+        submitter: 'Emily Wilson',
+        url: 'example.net',
+        assigned: 'David Lee',
+        priority: 'Medium',
+        dueDate: 'Jul 15',
+        estValue: '$10,000'
+      },
+      {
+        jobRequest: 'Quarterly financial report',
+        submitted: 'May 10',
+        status: 'In-process',
+        submitter: 'Robert Taylor',
+        url: 'example.co',
+        assigned: 'Lisa Chen',
+        priority: 'High',
+        dueDate: 'Jun 20',
+        estValue: '$7,500'
+      },
+      {
+        jobRequest: 'Customer satisfaction survey',
+        submitted: 'May 25',
+        status: 'Blocked',
+        submitter: 'James Miller',
+        url: 'example.io',
+        assigned: 'Karen White',
+        priority: 'Low',
+        dueDate: 'Jun 10',
+        estValue: '$3,000'
       }
     ];
     
@@ -56,7 +90,6 @@ const Spreadsheet = () => {
         priority: '',
         dueDate: '',
         estValue: ''
-        
       })
     }));
   };
@@ -87,7 +120,7 @@ const Spreadsheet = () => {
 
   const handleOptionSelect = (rowIndex, field, value) => {
     handleCellChange(rowIndex, field, value);
-    setActiveDropdown(null); 
+    setActiveDropdown(null);
   };
 
   const getPriorityClass = (priority) => {
@@ -109,8 +142,45 @@ const Spreadsheet = () => {
     }
   };
 
+  const handleSort = (key) => {
+    setSortConfig({ key, direction: 'asc' });
+    setShowSortDropdown(false);
+  };
+
+  const sortedData = React.useMemo(() => {
+    let sortableData = [...data];
+    if (sortConfig.key) {
+      sortableData.sort((a, b) => {
+        
+        const monthOrder = {
+          'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+          'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+        };
+        
+        const getDateValue = (dateStr) => {
+          if (!dateStr) return sortConfig.direction === 'asc' ? Infinity : -Infinity;
+          const [month, day] = dateStr.split(' ');
+          return (monthOrder[month] || 0) * 100 + parseInt(day || 0);
+        };
+        
+        const aValue = getDateValue(a[sortConfig.key]);
+        const bValue = getDateValue(b[sortConfig.key]);
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableData;
+  }, [data, sortConfig]);
+
   return (
     <div className="flex flex-col h-screen bg-white p-4">
+    
    
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">6 Q3 Financial Overview ()</h1>
@@ -136,7 +206,7 @@ const Spreadsheet = () => {
 
      
       <div style={{borderLeft:"0px", borderRight:"0px"}} className="flex items-center justify-between border border-gray-200/90 ">
-        <div className="flex items-center space-x-1 mb-1 mt-1">
+        <div className="flex items-center space-x-1 mb-1 mt-1 p-1">
          <div className="flex items-center ml-2">
   <span className="mr-2">Tool bar</span>
   <div className="flex items-center border-r border-gray-300 pr-2">
@@ -168,11 +238,31 @@ const Spreadsheet = () => {
               ))}
             </div>
           )}
-          <button className="px-2 py-1 text-s text-gray-700 bg-white rounded  border-gray-300 hover:bg-gray-50 flex items-center space-x-1">
-  <FiArrowUpLeft size={14} /> <FiArrowDownRight size={14} />
- 
-  <span>Sort</span>
-</button>
+          <div className="relative">
+            <button 
+              className="px-2 py-1 text-s text-gray-700 bg-white rounded border-gray-300 hover:bg-gray-50 flex items-center space-x-1"
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+            >
+              <FiArrowUpLeft size={14} /> <FiArrowDownRight size={14} />
+              <span>Sort</span>
+            </button>
+            {showSortDropdown && (
+              <div className="absolute z-20 mt-1 bg-white border border-gray-300 rounded shadow-lg p-2">
+                <div 
+                  className="px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleSort('submitted')}
+                >
+                  Submitted (Soon to Later)
+                </div>
+                <div 
+                  className="px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleSort('dueDate')}
+                >
+                  Due Date (Soon to Later)
+                </div>
+              </div>
+            )}
+          </div>
 
           <button className="flex items-center px-2 py-1 text-s text-gray-700 bg-white rounded  border-gray-300 hover:bg-gray-50">
             <FiFilter className="mr-1" size={12} />
@@ -215,7 +305,7 @@ const Spreadsheet = () => {
   </th>
 
   
- <th style={{ borderRight: "1px solid #D1D5DB" }} colSpan="4" className="p-2 bg-[#E2E2E2] drop-shadow-[0_6px_6px_white]">
+ <th style={{ borderRight: "1px solid #D1D5DB" }} colSpan="4" className="p-2 bg-[#E2E2E2] drop-shadow-[0_1px_1px_white]">
   <div className="flex items-center text-xs ml-4 ">
     Financial Overview
   </div>
@@ -224,13 +314,13 @@ const Spreadsheet = () => {
   
   
   
-  <th className="bg-gray-50 drop-shadow-[0_8px_8px_rgba(209,213,219,1)]"></th>
+  <th className="bg-gray-50 drop-shadow-[0_1px_1px_white]"></th>
  
 
   
-  <th style={{ borderRight: "2px solid rgb(245, 246, 248)", backgroundColor: "#D2E0D4" }} colSpan={1} className=" drop-shadow-[0_18px_18px_white] z-11  text-xs font-semibold text-center mb-0 ">
+  <th style={{ borderRight: "2px solid rgb(245, 246, 248)", backgroundColor: "#D2E0D4" }} colSpan={1} className=" drop-shadow-[0_1px_1px_white] z-10  text-xs font-semibold text-center mb-0 ">
    <div style={{alignContent:"center",alignItems:"center",justifyContent:"center"}} className="flex items-center">
-    <div className="flex items-center space-x-1">
+    <div className="flex items-center space-x-1 text-[#505450]">
       <FiMove size={12} className="text-gray-500" />
       <span className="font-semibold ml-1">ABC</span>
     </div>
@@ -241,12 +331,12 @@ const Spreadsheet = () => {
   
   <th  style={{ borderRight: "2px solid rgb(241, 244, 249)" }}
     colSpan="2" 
-    className="bg-purple-200  text-xs font-semibold text-center   border-gray-300 drop-shadow-[0_18px_18px_rgba(216, 180, 254, 1)]"
+    className="bg-purple-200  text-xs font-semibold text-center   border-gray-300 drop-shadow-[0_1px_1px_white]"
   >
     <div style={{alignContent:"center",alignItems:"center",justifyContent:"center"}} className="flex items-center">
     <div className="flex items-center space-x-1">
       <FiMove size={12} className="text-gray-500" />
-      <span className="font-semibold ml-1">Answer a question</span>
+      <span className="font-semibold ml-1 text-[#463E59]">Answer a question</span>
     </div>
     <FiMoreHorizontal size={14} className=" ml-2 text-gray-500" />
   </div>
@@ -255,9 +345,9 @@ const Spreadsheet = () => {
  
   <th style={{ borderRight: "2px solid rgb(238, 240, 244)" }} colSpan={1} className="bg-[#FAC2AF] text-xs font-semibold text-center  border-gray-300">
      <div style={{alignContent:"center",alignItems:"center",justifyContent:"center"}} className="flex items-center">
-    <div className="flex items-center space-x-1">
+    <div className="flex items-center space-x-1 ">
       <FiMove size={12} className="text-gray-500" />
-      <span className="font-semibold ml-1">Extract</span>
+      <span className="font-semibold ml-1 text-[#695149]">Extract</span>
     </div>
     <FiMoreHorizontal size={14} className=" ml-2 text-gray-500" />
   </div>
@@ -277,7 +367,7 @@ const Spreadsheet = () => {
                 #
               </th>
               {!hiddenFields.includes('jobRequest') && (
-               <th className="p-2 text-left text-xs font-medium bg-[#EEEEEE] border border-gray-300 border-r-gray-300 br">
+               <th className="p-2 text-left text-xs font-medium bg-[#EEEEEE] border border-gray-200  drop-shadow-[0_0px_1px_gray]  br">
   <div className="flex justify-between items-center flex-wrap">
     <div className="flex items-center font-semibold text-[#757575]">
       <FiCheckCircle className="mr-1" size={14} />
@@ -291,7 +381,7 @@ const Spreadsheet = () => {
 
               )}
               {!hiddenFields.includes('submitted') && (
-               <th className="p-1 text-left text-xs font-medium bg-[#EEEEEE] border border-r-gray-300 border-gray-300">
+               <th className="p-1 text-left text-xs font-medium bg-[#EEEEEE]  drop-shadow-[0_0px_1px_gray] ">
   <div className="flex justify-between items-center font-semibold">
     <div className="flex items-center text-[#757575]">
       <FiCalendar className="mr-1" size={14} />
@@ -305,7 +395,7 @@ const Spreadsheet = () => {
 
               )}
               {!hiddenFields.includes('status') && (
-                <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE] border border-r-gray-300 border-gray-300">
+                <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE] drop-shadow-[0_0px_1px_gray]">
   <div className="flex justify-between items-center font-semibold">
     <div className="flex items-center text-[#757575]">
       <FiClock className="mr-1" size={14} />
@@ -318,9 +408,9 @@ const Spreadsheet = () => {
 </th>
               )}
               {!hiddenFields.includes('submitter') && (
-               <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE] border border-r-gray-300 border-gray-300">
+               <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE] drop-shadow-[0_0px_1px_gray]">
   <div className="flex justify-between items-center font-semibold">
-    <div className="flex items-center">
+    <div className="flex items-center text-[#757575]">
       <FiUser className="mr-1" size={14} />
       Submitter
     </div>
@@ -332,9 +422,9 @@ const Spreadsheet = () => {
 
               )}
               {!hiddenFields.includes('url') && (
-               <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE] border border-r-gray-300 border-gray-300">
+               <th className="p-1 text-left text-xs font-medium  bg-[#EEEEEE]  drop-shadow-[0_0px_1px_gray]">
   <div className="flex justify-between items-center font-semibold">
-    <div className="flex items-center">
+    <div className="flex items-center text-[#757575]">
       <FiLink className="mr-1" size={14} />
       URL
     </div>
@@ -347,7 +437,7 @@ const Spreadsheet = () => {
               )}
               {!hiddenFields.includes('assigned') && (
                 <th style={{ backgroundColor: "#D2E0D4"}} className="p-1 text-left text-xs font-medium  border border-gray-300">
-                  <div className="flex font-semibold items-center">
+                  <div className="flex font-semibold items-center text-[#666C66]">
                     <FiUserCheck className="mr-1" size={14} />
                     Assigned
                   </div>
@@ -356,7 +446,7 @@ const Spreadsheet = () => {
               {!hiddenFields.includes('priority') && (
                 <th style={{ borderRight: "1px solid #D1D5DB" }}
  className="p-1 text-left text-xs font-medium bg-[#EAE3FC]  border-gray-300">
-                  <div className="flex font-semibold items-center">
+                  <div className="flex font-semibold items-center text-[#655C80]">
                     <FiFlag className="mr-1" size={14} />
                     Priority
                   </div>
@@ -364,7 +454,7 @@ const Spreadsheet = () => {
               )}
               {!hiddenFields.includes('dueDate') && (
                 <th style={{ borderRight: "1px solid #D1D5DB" }} className="p-1 text-left text-xs font-medium bg-[#EAE3FC]  border-gray-300">
-                  <div className="flex font-semibold items-center">
+                  <div className="flex font-semibold items-center text-[#757575]">
                     <FiCalendar className="mr-1" size={14} />
                     Due Date
                   </div>
@@ -372,7 +462,7 @@ const Spreadsheet = () => {
               )}
               {!hiddenFields.includes('estValue') && (
                 <th className="p-1 text-left text-xs font-medium bg-[#FFE9E0]  border-gray-300">
-                  <div className="flex font-semibold items-center">
+                  <div className="flex font-semibold items-center text-[#8C6C62]">
                     <FiFlag className="mr-1" size={14} />
                     Est. Value
                   </div>
@@ -387,16 +477,16 @@ const Spreadsheet = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, rowIndex) => (
+            {sortedData.map((row, rowIndex) => (
               <tr key={row.id} className="hover:bg-gray-50">
                 
-                <td className="p-1 text-xs text-center border border-gray-300">
+                <td className="p-1 text-xs text-center border border-gray-200">
                   {row.id}
                 </td>
 
                 
                 {!hiddenFields.includes('jobRequest') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -408,7 +498,7 @@ const Spreadsheet = () => {
 
               
                 {!hiddenFields.includes('submitted') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -420,7 +510,7 @@ const Spreadsheet = () => {
 
                
                 {!hiddenFields.includes('status') && (
-                  <td className="pl-1 pr-1 border border-gray-300 relative">
+                  <td className="pl-1 pr-1 border border-gray-200 relative">
                   <div 
   className={`w-full h-6 ${getStatusClass(row.status)} flex items-center justify-center px-1 cursor-pointer truncate overflow-hidden whitespace-nowrap rounded-full text-xs font-semibold`}
   onClick={() => toggleDropdown('status', rowIndex)}
@@ -445,7 +535,7 @@ const Spreadsheet = () => {
 
                 
                 {!hiddenFields.includes('submitter') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -457,7 +547,7 @@ const Spreadsheet = () => {
 
                
                 {!hiddenFields.includes('url') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -469,7 +559,7 @@ const Spreadsheet = () => {
 
                 
                 {!hiddenFields.includes('assigned') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -481,7 +571,7 @@ const Spreadsheet = () => {
 
                 
                 {!hiddenFields.includes('priority') && (
-                  <td className="p-0 border border-gray-300 relative">
+                  <td className="p-0 border border-gray-200 relative">
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
                       onClick={() => toggleDropdown('priority', rowIndex)}
@@ -507,7 +597,7 @@ const Spreadsheet = () => {
 
                 
                 {!hiddenFields.includes('dueDate') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -519,7 +609,7 @@ const Spreadsheet = () => {
 
                
                 {!hiddenFields.includes('estValue') && (
-                  <td className="p-0 border border-gray-300">
+                  <td className="p-0 border border-gray-200">
                     <input
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
