@@ -4,7 +4,13 @@ import Spreadsheet from "./Spreadsheet";
 import { useEffect } from "react";
 
 export default function Page() {
-
+const Spinner = () => {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-white/70 z-50">
+      <div className="w-12 h-12 border-4 border-t-transparent border-gray-600 rounded-full animate-spin"></div>
+    </div>
+  );
+};
   const call=async()=>{
     const data=await axios.get("https://reactspreadsheetnode.onrender.com");
 
@@ -12,7 +18,10 @@ export default function Page() {
   useEffect(()=>{call()},[])
   return (
     <main>
-      <Spreadsheet />
+      <h1 className="text-2xl font-bold mb-4">Spreadsheet Page</h1>
+      <Suspense fallback={<Spinner />}>
+        <Spreadsheet />
+      </Suspense>
     </main>
   );
 }
