@@ -18,7 +18,7 @@ const Spinner = () => {
   useEffect(()=>{call()},[])
   return (
     <main>
-      <h1 className="text-2xl font-bold mb-4">Spreadsheet Page</h1>
+      
       <Suspense fallback={<Spinner />}>
         <Spreadsheet />
       </Suspense>
