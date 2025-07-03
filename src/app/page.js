@@ -1,3 +1,4 @@
+"use client"
 import axios from "axios";
 import Spreadsheet from "./Spreadsheet";
 import { useEffect } from "react";
