@@ -100,7 +100,7 @@ const Spreadsheet = () => {
         submitted: 'May 15',
         status: 'In-process',
         submitter: 'Annie Christine',
-        url: 'example.com',
+        url: 'https://react-spreadsheet-3f7b.vercel.app/?key=KHOWHZOmc4o2I7p9sKY3QSFf',
         assigned: 'John Doe',
         priority: 'Medium',
         dueDate: 'Jun 30',
@@ -111,7 +111,7 @@ const Spreadsheet = () => {
         submitted: 'Apr 20',
         status: 'Complete',
         submitter: 'Michael Brown',
-        url: 'example.org',
+        url: 'https://react-spreadsheet-3f7b.vercel.app/?key=QxWQIEWSMUDpwANBmT33xNbF',
         assigned: 'Sarah Johnson',
         priority: 'High',
         dueDate: 'May 31',
@@ -122,7 +122,7 @@ const Spreadsheet = () => {
         submitted: 'Jun 1',
         status: 'Need to start',
         submitter: 'Emily Wilson',
-        url: 'example.net',
+        url: 'https://react-spreadsheet-3f7b.vercel.app/?key=KHOWHZOmc4o2I7p9sKY3QSFf',
         assigned: 'David Lee',
         priority: 'Medium',
         dueDate: 'Jul 15',
@@ -133,7 +133,7 @@ const Spreadsheet = () => {
         submitted: 'May 10',
         status: 'In-process',
         submitter: 'Robert Taylor',
-        url: 'example.co',
+        url: 'https://react-spreadsheet-3f7b.vercel.app/?key=QxWQIEWSMUDpwANBmT33xNbF',
         assigned: 'Lisa Chen',
         priority: 'High',
         dueDate: 'Jun 20',
@@ -144,7 +144,7 @@ const Spreadsheet = () => {
         submitted: 'May 25',
         status: 'Blocked',
         submitter: 'James Miller',
-        url: 'example.io',
+        url: 'https://react-spreadsheet-3f7b.vercel.app/?key=QxWQIEWSMUDpwANBmT33xNbF',
         assigned: 'Karen White',
         priority: 'Low',
         dueDate: 'Jun 10',
@@ -978,18 +978,44 @@ const Spreadsheet = () => {
                   </td>
                 )}
 
-                {!hiddenFields.includes('url') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-url` ? 'border-green-500' : 'border-gray-200'}`}>
-                    <input style={{fontSize:14}}
-                      type="text"
-                      className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
-                      value={row.url}
-                      onChange={(e) => handleCellChange(row.id, 'url', e.target.value)}
-                      onFocus={() => handleInputFocus(row.id, 'url')}
-                      onBlur={handleInputBlur}
-                    />
-                  </td>
-                )}
+    {!hiddenFields.includes('url') && (
+  <td
+    className={`p-0 border ${
+      activeInput === `${row.id}-url` ? 'border-green-500' : 'border-gray-200'
+    } overflow-hidden max-w-[120px]`} 
+    onClick={() => {
+      if (activeInput !== `${row.id}-url`) handleInputFocus(row.id, 'url');
+    }}
+  >
+    {activeInput === `${row.id}-url` ? (
+      <input
+        type="text"
+        style={{ fontSize: 14 }}
+        className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs overflow-x-auto whitespace-nowrap"
+        value={row.url}
+        onChange={(e) => handleCellChange(row.id, 'url', e.target.value)}
+        onFocus={() => handleInputFocus(row.id, 'url')}
+        onBlur={handleInputBlur}
+      />
+    ) : row.url ? (
+      <div className="w-full p-1 text-xs truncate max-w-[180px]">
+        <a
+          href={row.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-blue-600 underline"
+          style={{ fontSize: 14 }}
+        >
+          {row.url}
+        </a>
+      </div>
+    ) : (
+      <div className="w-full h-7 p-1 text-xs">&nbsp;</div>
+    )}
+  </td>
+)}
+
 
                 {!hiddenFields.includes('assigned') && (
                   <td className={`p-0 border ${activeInput === `${row.id}-assigned` ? 'border-green-500' : 'border-gray-200'}`}>
