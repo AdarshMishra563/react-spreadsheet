@@ -4,12 +4,16 @@ import {
   FiEye, FiFilter, FiUpload, FiDownload, FiShare2, 
   FiSearch, FiBell, FiUser, FiCalendar, FiLink, 
   FiFlag, FiCheckCircle, FiClock, FiUserCheck, FiPlus,
-  FiChevronDown, FiMove, FiMoreHorizontal,FiChevronsRight,FiArrowUpLeft,FiArrowDownRight,
-  FiAlertTriangle, FiX,FiCopy
+  FiChevronDown, FiMove, FiArrowLeftCircle, FiMoreHorizontal, FiChevronsRight, FiArrowUpLeft, FiArrowDownRight,
+  FiAlertTriangle, FiX, FiCopy,
+  FiCircle,
+  FiXCircle,
+  FiRotateCcw
 } from 'react-icons/fi';
 import { saveSpreadsheetData } from './api';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
+
 const generateRandomKey = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -29,7 +33,7 @@ const Spinner = () => {
 };
 
 const Spreadsheet = () => {
-    const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const statusOptions = ['       ','In-process', 'Need to start', 'Complete', 'Blocked'];
   const priorityOptions = ['High', 'Medium', 'Low',' '];
@@ -46,28 +50,37 @@ const Spreadsheet = () => {
     priority: null
   });
   const [loading, setLoading] = useState(false);
-
   const [showImportModal, setShowImportModal] = useState(false);
-const [showExportModal, setShowExportModal] = useState(false);
-const [showShareModal, setShowShareModal] = useState(false);
-const [importKey, setImportKey] = useState('');
-const [exportKey, setExportKey] = useState("");
-const [shareUrl, setShareUrl] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [importKey, setImportKey] = useState('');
+  const [exportKey, setExportKey] = useState("");
+  const [shareUrl, setShareUrl] = useState('');
   const [activeInput, setActiveInput] = useState(null);
-const [key,setkey]=useState("");
-useEffect(()=>{const data=generateRandomKey();
-  setkey(data);
-  setExportKey(data)
-},[])
- const searchParams = useSearchParams();
-   useEffect(() => {
+  const [key, setKey] = useState("");
+  const [undo, setUndo] = useState(false);
+  const [undoData, setUndodata] = useState([]);
+
+  useEffect(() => {
+    const data = generateRandomKey();
+    setKey(data);
+    setExportKey(data);
+  }, []);
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
     const key = searchParams.get('key');
     if (key) {
-       setLoading(true);
+      setLoading(true);
       axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${key}`)
         .then(res => {
           if (res.data.success) {
-            setData(res.data.data.data);
+           
+            const dataWithIds = res.data.data.data.map(row => ({
+              ...row,
+              id: row.id || generateRandomKey()
+            }));
+            setData(dataWithIds);
           } else {
             console.error('No data found');
           }
@@ -76,9 +89,10 @@ useEffect(()=>{const data=generateRandomKey();
           console.error('Error fetching data', err);
         }).finally(() => {
           setLoading(false);
-        });;
+        });
     }
   }, [searchParams]);
+
   const initializeData = (count) => {
     const sampleData = [
       {
@@ -139,7 +153,7 @@ useEffect(()=>{const data=generateRandomKey();
     ];
     
     return Array.from({ length: count }, (_, i) => ({
-      id: i + 1,
+      id: generateRandomKey(), 
       ...(i < sampleData.length ? sampleData[i] : {
         jobRequest: '',
         submitted: '',
@@ -156,13 +170,14 @@ useEffect(()=>{const data=generateRandomKey();
 
   const [data, setData] = useState(initializeData(rowCount));
 
-  const handleCellChange = (rowIndex, field, value) => {
-    const updatedData = [...data];
-    updatedData[rowIndex] = {
-      ...updatedData[rowIndex],
-      [field]: value
-    };
-    setData(updatedData);
+  const handleCellChange = (rowId, field, value) => {
+    setData(prevData => 
+      prevData.map(row => 
+        row.id === rowId 
+          ? { ...row, [field]: value } 
+          : row
+      )
+    );
   };
 
   const toggleFieldVisibility = (field) => {
@@ -173,13 +188,13 @@ useEffect(()=>{const data=generateRandomKey();
     );
   };
 
-  const toggleDropdown = (type, rowIndex) => {
-    const dropdownId = `${type}-${rowIndex}`;
+  const toggleDropdown = (type, rowId) => {
+    const dropdownId = `${type}-${rowId}`;
     setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
   };
 
-  const handleOptionSelect = (rowIndex, field, value) => {
-    handleCellChange(rowIndex, field, value);
+  const handleOptionSelect = (rowId, field, value) => {
+    handleCellChange(rowId, field, value);
     setActiveDropdown(null);
   };
 
@@ -229,77 +244,85 @@ useEffect(()=>{const data=generateRandomKey();
     setShowCellViewDropdown(false);
   };
 
-  const handleInputFocus = (rowIndex, field) => {
-    setActiveInput(`${rowIndex}-${field}`);
+  const handleInputFocus = (rowId, field) => {
+    setActiveInput(`${rowId}-${field}`);
   };
 
   const handleInputBlur = () => {
     setActiveInput(null);
   };
 
+  const monthOrder = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
+  };
+
   const sortedAndFilteredData = React.useMemo(() => {
+    const parseDateValue = (dateStr) => {
+      if (!dateStr) return null;
+
+      if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dateStr)) {
+        const [day, month, year] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day).getTime();
+      }
+
+      if (/^[A-Za-z]{3} \d{1,2}$/.test(dateStr)) {
+        const [monthName, day] = dateStr.split(' ');
+        const month = monthOrder[monthName];
+        const year = new Date().getFullYear();
+        return new Date(year, month - 1, parseInt(day)).getTime();
+      }
+
+      return null;
+    };
+
     let filteredData = [...data];
-    
-    
+
     if (filters.status) {
       filteredData = filteredData.filter(row => row.status === filters.status);
     }
     if (filters.priority) {
       filteredData = filteredData.filter(row => row.priority === filters.priority);
     }
-    
-   
+
     if (sortConfig.key) {
-      const monthOrder = {
-        'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-        'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
-      };
-      
       filteredData.sort((a, b) => {
-        const getDateValue = (dateStr) => {
-          if (!dateStr) return sortConfig.direction === 'asc' ? Infinity : -Infinity;
-          const [month, day] = dateStr.split(' ');
-          return (monthOrder[month] || 0) * 100 + parseInt(day || 0);
-        };
-        
-        const aValue = sortConfig.key === 'submitted' || sortConfig.key === 'dueDate' 
-          ? getDateValue(a[sortConfig.key])
-          : a[sortConfig.key];
-        const bValue = sortConfig.key === 'submitted' || sortConfig.key === 'dueDate' 
-          ? getDateValue(b[sortConfig.key])
-          : b[sortConfig.key];
-        
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        if (sortConfig.key === 'submitted' || sortConfig.key === 'dueDate') {
+          aValue = parseDateValue(aValue);
+          bValue = parseDateValue(bValue);
+
+          if (aValue === null) aValue = sortConfig.direction === 'asc' ? Infinity : -Infinity;
+          if (bValue === null) bValue = sortConfig.direction === 'asc' ? Infinity : -Infinity;
         }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
-    
+
     return filteredData;
-  }, [data, sortConfig, filters]);
+  }, [data, filters, sortConfig]);
 
-    const handleSave = async () => {
+  const handleSave = async () => {
     setIsSaving(true);
-
     setSaveStatus(null);
     
     try {
-      await saveSpreadsheetData(data,key);
+      await saveSpreadsheetData(data, key);
       setSaveStatus({ type: 'success', message: 'Data saved successfully!' });
     } catch (error) {
       setSaveStatus({ type: 'error', message: 'Failed to save data. Please try again.' });
     } finally {
       setIsSaving(false);
-      
       setTimeout(() => setSaveStatus(null), 3000);
     }
   };
   
-const handleImport = async () => {
+  const handleImport = async () => {
   if (!importKey.trim()) {
     alert('Please enter a valid key');
     return;
@@ -307,10 +330,53 @@ const handleImport = async () => {
 
   try {
     const result = await axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${importKey}`);
-    console.log(result)
     if (result.data.success) {
-      setData(result.data.data.data);
-      setkey(importKey);
+      
+      const nonEmptyImportedRows = result.data.data.data.filter(importedRow => {
+      
+        return Object.entries(importedRow).some(([key, value]) => 
+          key !== 'id' && value !== '' && value !== null && value !== undefined
+        );
+      });
+
+      
+      const firstEmptyRowIndex = data.findIndex(row => {
+        return Object.entries(row).every(([key, value]) => 
+          key === 'id' || value === '' || value === null || value === undefined
+        );
+      });
+
+      
+      let updatedData;
+      if (firstEmptyRowIndex === -1) {
+        
+        updatedData = [...data, ...nonEmptyImportedRows.map(row => ({
+          ...row,
+          id: row.id || generateRandomKey()
+        }))];
+      } else {
+       
+        updatedData = [...data];
+        nonEmptyImportedRows.forEach((importedRow, i) => {
+          const targetIndex = firstEmptyRowIndex + i;
+          if (targetIndex < updatedData.length) {
+            updatedData[targetIndex] = {
+              ...updatedData[targetIndex], 
+              ...importedRow,            
+              id: updatedData[targetIndex].id 
+            };
+          } else {
+           
+            updatedData.push({
+              ...importedRow,
+              id: generateRandomKey()
+            });
+          }
+        });
+      }
+
+      setData(updatedData);
+      setKey(importKey);
       setSaveStatus({ type: 'success', message: 'Data imported successfully!' });
     } else {
       setSaveStatus({ type: 'error', message: result.message || 'Failed to import data' });
@@ -322,31 +388,56 @@ const handleImport = async () => {
     setTimeout(() => setSaveStatus(null), 3000);
   }
 };
-const handleExport = () => {
-  setExportKey(key);
-  setShowExportModal(true);
- 
-};
 
-const handleShare = () => {
-  const url = `${window.location.origin}${window.location.pathname}?key=${key}`;
-  setShareUrl(url);
-  setShowShareModal(true);
-};
+  const handleExport = () => {
+    setExportKey(key);
+    setShowExportModal(true);
+  };
 
-const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text);
-  setSaveStatus({ type: 'success', message: 'Copied to clipboard!' });
-  setTimeout(() => setSaveStatus(null), 2000);
-};
+  const handleShare = () => {
+    const url = `${window.location.origin}${window.location.pathname}?key=${key}`;
+    setShareUrl(url);
+    setShowShareModal(true);
+  };
 
-if(loading){
-  return <Spinner/>
-}
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setSaveStatus({ type: 'success', message: 'Copied to clipboard!' });
+    setTimeout(() => setSaveStatus(null), 2000);
+  };
+
+  const reset = () => {
+    setUndo(true);
+    setUndodata(data);
+    const clearedData = data.map(item => ({
+      id: item.id, 
+      jobRequest: "",
+      submitted: "",
+      status: "",
+      submitter: "",
+      assigned: "",
+      dueDate: "",
+      estValue: "",
+      priority: "",
+      url: ""
+    }));
+    setData(clearedData);
+  };
+
+  const revert = () => {
+    setData(undoData);
+    setUndo(false);
+  };
+
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
     <div className="flex flex-col h-screen bg-white p-4">
+      {/* Header and Toolbar */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">6 Q3 Financial Overview ()</h1>
+        <h1 className="text-xl font-semibold">React Spreadsheet</h1>
         <div className="flex items-center space-x-4">
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -367,6 +458,7 @@ if(loading){
         </div>
       </div>
 
+      {/* Toolbar */}
       <div style={{borderLeft:"0px", borderRight:"0px"}} className="flex items-center justify-between border border-gray-200/90 ">
         <div className="flex items-center space-x-1 mb-1 mt-1 p-1">
           <div className="flex items-center ml-2">
@@ -506,15 +598,15 @@ if(loading){
         </div>
         <div className="flex items-center space-x-2">
           {saveStatus && (
-        <div className={`mb-2 p-2 text-xs rounded ${
-          saveStatus.type === 'success' 
-            ? 'bg-green-100 text-green-600' 
-            : 'bg-red-100 text-red-600'
-        }`}>
-          {saveStatus.message}
-        </div>
-      )}
-                    <button 
+            <div className={`mb-2 p-2 text-xs rounded ${
+              saveStatus.type === 'success' 
+                ? 'bg-green-100 text-green-600' 
+                : 'bg-red-100 text-red-600'
+            }`}>
+              {saveStatus.message}
+            </div>
+          )}
+          <button 
             onClick={handleSave}
             disabled={isSaving}
             className="flex items-center px-2 py-2 text-xs text-white bg-green-400 rounded border border-green-700 hover:bg-green-700 disabled:bg-green-300"
@@ -522,7 +614,7 @@ if(loading){
             {isSaving ? 'Saving...' : 'Save'}
           </button>
 
-          <button  onClick={() => setShowImportModal(true)} className="flex items-center px-2 py-2 text-xs text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50">
+          <button onClick={() => setShowImportModal(true)} className="flex items-center px-2 py-2 text-xs text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50">
             <FiDownload className="mr-1" size={12} />
             Import
           </button>
@@ -530,7 +622,7 @@ if(loading){
             <FiUpload className="mr-1" size={12} />
             Export
           </button>
-          <button  onClick={handleShare} className="flex items-center px-2 py-2 text-xs text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50">
+          <button onClick={handleShare} className="flex items-center px-2 py-2 text-xs text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50">
             <FiShare2 className="mr-1" size={12} />
             Share
           </button>
@@ -538,100 +630,99 @@ if(loading){
             <FiAlertTriangle className="mr-1" size={12} />
             New Action
           </button>
-             
         </div>
-        {showImportModal && (
-  <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-64">
-    <div className="flex justify-between items-center mb-2">
-      <h3 className="text-sm font-medium">Import Data</h3>
-      <button onClick={() => setShowImportModal(false)} className="text-gray-500 hover:text-gray-700">
-        <FiX size={16} />
-      </button>
-    </div>
-    <input
-      type="text"
-      placeholder="Enter spreadsheet key"
-      value={importKey}
-      onChange={(e) => setImportKey(e.target.value)}
-      className="w-full p-2 mb-2 text-xs border border-gray-300 rounded"
-    />
-    <button
-      onClick={handleImport}
-      className="w-full py-2 text-xs text-white bg-blue-500 rounded hover:bg-blue-600"
-    >
-      Import Data
-    </button>
-  </div>
-)}{showExportModal && (
-  <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-64">
-    <div className="flex justify-between items-center mb-2">
-      <h3 className="text-sm font-medium">Export Data</h3>
-      <button onClick={() => setShowExportModal(false)} className="text-gray-500 hover:text-gray-700">
-        <FiX size={16} />
-      </button>
-    </div>
-    <p className="text-xs mb-2">Copy this key to access your data anywhere:</p>
-    <div className="flex items-center">
-      <input
-        type="text"
-        value={exportKey}
-        readOnly
-        className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
-      />
-      <button
-        onClick={() => {copyToClipboard(exportKey);handleSave()}}
-        className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
-      >
-        <FiCopy size={14} />
-      </button>
-    </div>
-    <p className="text-xs mt-2 text-gray-500">Use this key to import your data later</p>
-  </div>
-)}
-
-
-{showShareModal && (
-  <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-72">
-    <div className="flex justify-between items-center mb-2">
-      <h3 className="text-sm font-medium">Share Spreadsheet</h3>
-      <button onClick={() => setShowShareModal(false)} className="text-gray-500 hover:text-gray-700">
-        <FiX size={16} />
-      </button>
-    </div>
-    <p className="text-xs mb-2">Share this URL to collaborate:</p>
-    <div className="flex items-center mb-2">
-      <input
-        type="text"
-        value={shareUrl}
-        readOnly
-        className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
-      />
-      <button
-        onClick={() => copyToClipboard(shareUrl)}
-        className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
-      >
-        <FiCopy size={14} />
-      </button>
-    </div>
-    <div className="flex items-center">
-      <input
-        type="text"
-        value={key}
-        readOnly
-        className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
-      />
-      <button
-        onClick={() => copyToClipboard(key)}
-        className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
-      >
-        <FiCopy size={14} />
-      </button>
-    </div>
-    <p className="text-xs mt-2 text-gray-500">Or share just the key above</p>
-  </div>
-)}
-
       </div>
+
+      
+      {showImportModal && (
+        <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-64">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-medium">Import Data</h3>
+            <button onClick={() => setShowImportModal(false)} className="text-gray-500 hover:text-gray-700">
+              <FiX size={16} />
+            </button>
+          </div>
+          <input
+            type="text"
+            placeholder="Enter spreadsheet key"
+            value={importKey}
+            onChange={(e) => setImportKey(e.target.value)}
+            className="w-full p-2 mb-2 text-xs border border-gray-300 rounded"
+          />
+          <button
+            onClick={handleImport}
+            className="w-full py-2 text-xs text-white bg-blue-500 rounded hover:bg-blue-600"
+          >
+            Import Data
+          </button>
+        </div>
+      )}
+      {showExportModal && (
+        <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-64">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-medium">Export Data</h3>
+            <button onClick={() => setShowExportModal(false)} className="text-gray-500 hover:text-gray-700">
+              <FiX size={16} />
+            </button>
+          </div>
+          <p className="text-xs mb-2">Copy this key to access your data anywhere:</p>
+          <div className="flex items-center">
+            <input
+              type="text"
+              value={exportKey}
+              readOnly
+              className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
+            />
+            <button
+              onClick={() => {copyToClipboard(exportKey);handleSave()}}
+              className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
+            >
+              <FiCopy size={14} />
+            </button>
+          </div>
+          <p className="text-xs mt-2 text-gray-500">Use this key to import your data later</p>
+        </div>
+      )}
+      {showShareModal && (
+        <div className="absolute z-30 right-0 mt-10 mr-4 bg-white border border-gray-300 rounded shadow-lg p-4 w-72">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-medium">Share Spreadsheet</h3>
+            <button onClick={() => setShowShareModal(false)} className="text-gray-500 hover:text-gray-700">
+              <FiX size={16} />
+            </button>
+          </div>
+          <p className="text-xs mb-2">Share this URL to collaborate:</p>
+          <div className="flex items-center mb-2">
+            <input
+              type="text"
+              value={shareUrl}
+              readOnly
+              className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
+            />
+            <button
+              onClick={() => copyToClipboard(shareUrl)}
+              className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
+            >
+              <FiCopy size={14} />
+            </button>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="text"
+              value={key}
+              readOnly
+              className="flex-1 p-2 text-xs border border-gray-300 rounded-l"
+            />
+            <button
+              onClick={() => copyToClipboard(key)}
+              className="p-2 text-xs bg-gray-200 hover:bg-gray-300 rounded-r"
+            >
+              <FiCopy size={14} />
+            </button>
+          </div>
+          <p className="text-xs mt-2 text-gray-500">Or share just the key above</p>
+        </div>
+      )}
 
      
       {(filters.status || filters.priority) && (
@@ -667,12 +758,13 @@ if(loading){
         </div>
       )}
 
-      <div className="flex-1 overflow-auto ">
+      
+      <div className="flex-1 overflow-auto">
         <table className="min-w-full border-collapse">
           <thead className="sticky top-0 bg-white z-10">
             <th className="bg-white  bg-white drop-shadow-[0_8px_8px_rgba(209,213,219,1)] "></th>
             <th style={{ borderRight: "1px solid #D1D5DB" }} colSpan="4" className="p-3 bg-[#E2E2E2] drop-shadow-[0_0px_2px_white]">
-              <div className="flex items-center text-xs ml-4">Financial Overview</div>
+              <div className="flex items-center text-xs ml-4">Financial Overview <FiXCircle onClick={reset} style={{ marginLeft:12,color:"red",cursor:"pointer"}} size={16}/>{undo && <FiRotateCcw onClick={revert} size={16} style={{ marginLeft:12,color:"red",cursor:"pointer"}}/>}</div>
             </th>
             <th className="bg-gray-50 drop-shadow-[0_1px_1px_white]"></th>
             <th style={{ borderRight: "2px solid rgb(245, 246, 248)", backgroundColor: "#D2E0D4" }} colSpan={1} className="drop-shadow-[0_1px_1px_white] z-10 text-xs font-semibold text-center mb-0">
@@ -817,33 +909,33 @@ if(loading){
             </tr>
           </thead>
           <tbody>
-            {sortedAndFilteredData.map((row, rowIndex) => (
+            {sortedAndFilteredData.map((row,i) => (
               <tr key={row.id} className="hover:bg-gray-50">
-                <td className="p-1 text-xs text-center border border-gray-200">{row.id}</td>
+                <td className="p-1 text-xs text-center border border-gray-200">{i+1}</td>
 
                 {!hiddenFields.includes('jobRequest') && (
-                  <td className={`p-1 border ${activeInput === `${rowIndex}-jobRequest` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-1 border ${activeInput === `${row.id}-jobRequest` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input
                       type="text"
                       style={{fontSize:14}}
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.jobRequest}
-                      onChange={(e) => handleCellChange(rowIndex, 'jobRequest', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'jobRequest')}
+                      onChange={(e) => handleCellChange(row.id, 'jobRequest', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'jobRequest')}
                       onBlur={handleInputBlur}
                     />
                   </td>
                 )}
 
                 {!hiddenFields.includes('submitted') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-submitted` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-submitted` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input
                       type="text"
                       style={{fontSize:14}}
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.submitted}
-                      onChange={(e) => handleCellChange(rowIndex, 'submitted', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'submitted')}
+                      onChange={(e) => handleCellChange(row.id, 'submitted', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'submitted')}
                       onBlur={handleInputBlur}
                     />
                   </td>
@@ -853,17 +945,17 @@ if(loading){
                   <td className="pl-1 pr-1 border border-gray-200 relative">
                     <div 
                       className={`w-full h-6 ${getStatusClass(row.status)} flex items-center justify-center px-1 cursor-pointer truncate overflow-hidden whitespace-nowrap rounded-full text-xs font-semibold`}
-                      onClick={() => toggleDropdown('status', rowIndex)}
+                      onClick={() => toggleDropdown('status', row.id)}
                     >
                       <span style={{fontSize:14}}>{row.status || ""}</span>
                     </div>
-                    {activeDropdown === `status-${rowIndex}` && (
+                    {activeDropdown === `status-${row.id}` && (
                       <div className="absolute z-20 w-full bg-white border border-gray-300 rounded shadow-lg mt-1">
                         {statusOptions.map(option => (
                           <div
                             key={option}
                             className="px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleOptionSelect(rowIndex, 'status', option)}
+                            onClick={() => handleOptionSelect(row.id, 'status', option)}
                           >
                             {option}
                           </div>
@@ -874,39 +966,39 @@ if(loading){
                 )}
 
                 {!hiddenFields.includes('submitter') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-submitter` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-submitter` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.submitter}
-                      onChange={(e) => handleCellChange(rowIndex, 'submitter', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'submitter')}
+                      onChange={(e) => handleCellChange(row.id, 'submitter', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'submitter')}
                       onBlur={handleInputBlur}
                     />
                   </td>
                 )}
 
                 {!hiddenFields.includes('url') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-url` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-url` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.url}
-                      onChange={(e) => handleCellChange(rowIndex, 'url', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'url')}
+                      onChange={(e) => handleCellChange(row.id, 'url', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'url')}
                       onBlur={handleInputBlur}
                     />
                   </td>
                 )}
 
                 {!hiddenFields.includes('assigned') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-assigned` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-assigned` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.assigned}
-                      onChange={(e) => handleCellChange(rowIndex, 'assigned', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'assigned')}
+                      onChange={(e) => handleCellChange(row.id, 'assigned', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'assigned')}
                       onBlur={handleInputBlur}
                     />
                   </td>
@@ -916,17 +1008,17 @@ if(loading){
                   <td className="p-0 border border-gray-200 relative">
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
-                      onClick={() => toggleDropdown('priority', rowIndex)}
+                      onClick={() => toggleDropdown('priority', row.id)}
                     >
                       <span>{row.priority || ''}</span>
                     </div>
-                    {activeDropdown === `priority-${rowIndex}` && (
+                    {activeDropdown === `priority-${row.id}` && (
                       <div className="absolute z-20 w-full bg-white border border-gray-300 rounded shadow-lg mt-1">
                         {priorityOptions.map(option => (
                           <div
                             key={option}
                             className="px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleOptionSelect(rowIndex, 'priority', option)}
+                            onClick={() => handleOptionSelect(row.id, 'priority', option)}
                           >
                             {option}
                           </div>
@@ -937,26 +1029,26 @@ if(loading){
                 )}
 
                 {!hiddenFields.includes('dueDate') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-dueDate` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-dueDate` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.dueDate}
-                      onChange={(e) => handleCellChange(rowIndex, 'dueDate', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'dueDate')}
+                      onChange={(e) => handleCellChange(row.id, 'dueDate', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'dueDate')}
                       onBlur={handleInputBlur}
                     />
                   </td>
                 )}
 
                 {!hiddenFields.includes('estValue') && (
-                  <td className={`p-0 border ${activeInput === `${rowIndex}-estValue` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 border ${activeInput === `${row.id}-estValue` ? 'border-green-500' : 'border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
                       value={row.estValue}
-                      onChange={(e) => handleCellChange(rowIndex, 'estValue', e.target.value)}
-                      onFocus={() => handleInputFocus(rowIndex, 'estValue')}
+                      onChange={(e) => handleCellChange(row.id, 'estValue', e.target.value)}
+                      onFocus={() => handleInputFocus(row.id, 'estValue')}
                       onBlur={handleInputBlur}
                     />
                   </td>
@@ -965,7 +1057,7 @@ if(loading){
                   <td className="p-0 border border-gray-300 relative">
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
-                      onClick={() => toggleDropdown('priority', rowIndex)}
+                      onClick={() => toggleDropdown('priority', row.id)}
                     >
                       <span>{ ''}</span>
                     </div>
