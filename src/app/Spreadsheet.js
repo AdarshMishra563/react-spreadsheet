@@ -429,6 +429,81 @@ const Spreadsheet = () => {
     setData(undoData);
     setUndo(false);
   };
+  useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (!activeInput) return;
+
+    const [rowId, field] = activeInput.split('-');
+    const currentRowIndex = data.findIndex(row => row.id === rowId);
+    
+    if (currentRowIndex === -1) return;
+
+    const fieldsOrder = [
+      'jobRequest', 'submitted', 'status', 'submitter', 
+      'url', 'assigned', 'priority', 'dueDate', 'estValue'
+    ].filter(f => !hiddenFields.includes(f));
+
+    const currentFieldIndex = fieldsOrder.indexOf(field);
+    
+    let newRowIndex = currentRowIndex;
+    let newFieldIndex = currentFieldIndex;
+
+    switch (e.key) {
+      case 'ArrowRight':
+        if (currentFieldIndex < fieldsOrder.length - 1) {
+          newFieldIndex = currentFieldIndex + 1;
+        } else if (currentRowIndex < data.length - 1) {
+          newRowIndex = currentRowIndex + 1;
+          newFieldIndex = 0;
+        }
+        break;
+      case 'ArrowLeft':
+        if (currentFieldIndex > 0) {
+          newFieldIndex = currentFieldIndex - 1;
+        } else if (currentRowIndex > 0) {
+          newRowIndex = currentRowIndex - 1;
+          newFieldIndex = fieldsOrder.length - 1;
+        }
+        break;
+      case 'ArrowDown':
+        if (currentRowIndex < data.length - 1) {
+          newRowIndex = currentRowIndex + 1;
+        }
+        break;
+      case 'ArrowUp':
+        if (currentRowIndex > 0) {
+          newRowIndex = currentRowIndex - 1;
+        }
+        break;
+      default:
+        return;
+    }
+
+    if (newRowIndex !== currentRowIndex || newFieldIndex !== currentFieldIndex) {
+      e.preventDefault();
+      const newRowId = data[newRowIndex].id;
+      const newField = fieldsOrder[newFieldIndex];
+      setActiveInput(`${newRowId}-${newField}`);
+      
+      // Focus the new input element
+      setTimeout(() => {
+        const inputElement = document.querySelector(`input[data-row="${newRowId}"][data-field="${newField}"]`);
+        if (inputElement) {
+          inputElement.focus();
+          
+          const value = inputElement.value;
+          inputElement.value = '';
+          inputElement.value = value;
+        }
+      }, 0);
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [activeInput, data, hiddenFields]);
 
   if (loading) {
     return <Spinner />;
@@ -924,6 +999,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'jobRequest', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'jobRequest')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="jobRequest"
                     />
                   </td>
                 )}
@@ -938,6 +1015,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'submitted', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'submitted')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="submitted"
                     />
                   </td>
                 )}
@@ -947,7 +1026,7 @@ const Spreadsheet = () => {
                     <div 
                       className={`w-full h-6 ${getStatusClass(row.status)} flex items-center justify-center px-1 cursor-pointer truncate overflow-hidden whitespace-nowrap rounded-full text-xs font-semibold`}
                       onClick={() => toggleDropdown('status', row.id)}
-                    >
+                        >
                       <span style={{fontSize:14}}>{row.status || ""}</span>
                     </div>
                     {activeDropdown === `status-${row.id}` && (
@@ -975,6 +1054,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'submitter', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'submitter')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="submitter"
                     />
                   </td>
                 )}
@@ -997,6 +1078,8 @@ const Spreadsheet = () => {
         onChange={(e) => handleCellChange(row.id, 'url', e.target.value)}
         onFocus={() => handleInputFocus(row.id, 'url')}
         onBlur={handleInputBlur}
+        data-row={row.id}
+  data-field="url"
       />
     ) : row.url ? (
       <div className="w-full p-1 text-xs truncate max-w-[180px]">
@@ -1027,6 +1110,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'assigned', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'assigned')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="assigned"
                     />
                   </td>
                 )}
@@ -1036,6 +1121,7 @@ const Spreadsheet = () => {
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
                       onClick={() => toggleDropdown('priority', row.id)}
+                      
                     >
                       <span>{row.priority || ''}</span>
                     </div>
@@ -1064,6 +1150,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'dueDate', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'dueDate')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="dueDate"
                     />
                   </td>
                 )}
@@ -1077,6 +1165,8 @@ const Spreadsheet = () => {
                       onChange={(e) => handleCellChange(row.id, 'estValue', e.target.value)}
                       onFocus={() => handleInputFocus(row.id, 'estValue')}
                       onBlur={handleInputBlur}
+                      data-row={row.id}
+  data-field="estValue"
                     />
                   </td>
                 )}
