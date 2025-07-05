@@ -377,7 +377,7 @@ const Spreadsheet = () => {
       }
 
       setData(updatedData);
-      setKey(importKey);
+    
       setSaveStatus({ type: 'success', message: 'Data imported successfully!' });
     } else {
       setSaveStatus({ type: 'error', message: result.message || 'Failed to import data' });
