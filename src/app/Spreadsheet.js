@@ -990,7 +990,7 @@ const Spreadsheet = () => {
                 <td className="p-1 text-xs text-center border border-gray-200">{i+1}</td>
 
                 {!hiddenFields.includes('jobRequest') && (
-                  <td className={`p-1 border ${activeInput === `${row.id}-jobRequest` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-1  ${activeInput === `${row.id}-jobRequest` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input
                       type="text"
                       style={{fontSize:14}}
@@ -1006,7 +1006,7 @@ const Spreadsheet = () => {
                 )}
 
                 {!hiddenFields.includes('submitted') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-submitted` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 ${activeInput === `${row.id}-submitted` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input
                       type="text"
                       style={{fontSize:14}}
@@ -1046,7 +1046,7 @@ const Spreadsheet = () => {
                 )}
 
                 {!hiddenFields.includes('submitter') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-submitter` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 ${activeInput === `${row.id}-submitter` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -1062,9 +1062,7 @@ const Spreadsheet = () => {
 
     {!hiddenFields.includes('url') && (
   <td
-    className={`p-0 border ${
-      activeInput === `${row.id}-url` ? 'border-green-500' : 'border-gray-200'
-    } overflow-hidden max-w-[120px]`} 
+    className={`p-0 ${activeInput === `${row.id}-url` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'} overflow-hidden max-w-[120px]`} 
     onClick={() => {
       if (activeInput !== `${row.id}-url`) handleInputFocus(row.id, 'url');
     }}
@@ -1102,7 +1100,7 @@ const Spreadsheet = () => {
 
 
                 {!hiddenFields.includes('assigned') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-assigned` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0  ${activeInput === `${row.id}-assigned` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -1117,7 +1115,7 @@ const Spreadsheet = () => {
                 )}
 
                 {!hiddenFields.includes('priority') && (
-                  <td className="p-0 border border-gray-200 relative">
+                  <td className="p-1 border border-gray-200 relative">
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
                       onClick={() => toggleDropdown('priority', row.id)}
@@ -1142,7 +1140,7 @@ const Spreadsheet = () => {
                 )}
 
                 {!hiddenFields.includes('dueDate') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-dueDate` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0  ${activeInput === `${row.id}-dueDate` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -1157,7 +1155,7 @@ const Spreadsheet = () => {
                 )}
 
                 {!hiddenFields.includes('estValue') && (
-                  <td className={`p-0 border ${activeInput === `${row.id}-estValue` ? 'border-green-500' : 'border-gray-200'}`}>
+                  <td className={`p-0 ${activeInput === `${row.id}-estValue` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'}`}>
                     <input style={{fontSize:14}}
                       type="text"
                       className="w-full p-1 h-7 border-none focus:outline-none bg-transparent text-xs"
@@ -1171,10 +1169,10 @@ const Spreadsheet = () => {
                   </td>
                 )}
                 {!hiddenFields.includes('priority') && (
-                  <td className="p-0 border border-gray-300 relative">
+                  <td className="p-1 border border-gray-300 relative">
                     <div 
                       className={`w-full h-7 ${getPriorityClass(row.priority)} flex items-center justify-between px-2 cursor-pointer`}
-                      onClick={() => toggleDropdown('priority', row.id)}
+                      
                     >
                       <span>{ ''}</span>
                     </div>
