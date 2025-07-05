@@ -485,7 +485,7 @@ const Spreadsheet = () => {
       const newField = fieldsOrder[newFieldIndex];
       setActiveInput(`${newRowId}-${newField}`);
       
-      // Focus the new input element
+      
       setTimeout(() => {
         const inputElement = document.querySelector(`input[data-row="${newRowId}"][data-field="${newField}"]`);
         if (inputElement) {
@@ -1062,7 +1062,7 @@ const Spreadsheet = () => {
 
     {!hiddenFields.includes('url') && (
   <td
-    className={`p-0 ${activeInput === `${row.id}-url` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'} overflow-hidden max-w-[120px]`} 
+    className={`p-0 ${activeInput === `${row.id}-url` ? 'outline outline-2 outline-green-500' : 'border border-gray-200'} overflow-hidden min-w-[120px] max-w-[120px]`} 
     onClick={() => {
       if (activeInput !== `${row.id}-url`) handleInputFocus(row.id, 'url');
     }}
@@ -1080,7 +1080,7 @@ const Spreadsheet = () => {
   data-field="url"
       />
     ) : row.url ? (
-      <div className="w-full p-1 text-xs truncate max-w-[180px]">
+      <div className="w-full p-1 text-xs truncate max-w-[120px]">
         <a
           href={row.url}
           target="_blank"
