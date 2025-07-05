@@ -60,14 +60,15 @@ const Spreadsheet = () => {
   const [key, setKey] = useState("");
   const [undo, setUndo] = useState(false);
   const [undoData, setUndodata] = useState([]);
-
+  const searchParams = useSearchParams();
   useEffect(() => {
-    const data = generateRandomKey();
-    setKey(data);
-    setExportKey(data);
+ const paramKey = searchParams.get("key");
+  const finalKey = paramKey || generateRandomKey();
+  setKey(finalKey);
+  setExportKey(finalKey);
   }, []);
 
-  const searchParams = useSearchParams();
+
   useEffect(() => {
     const key = searchParams.get('key');
     if (key) {
