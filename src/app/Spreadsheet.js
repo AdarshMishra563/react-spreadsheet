@@ -1080,7 +1080,7 @@ const Spreadsheet = () => {
   data-field="url"
       />
     ) : row.url ? (
-      <div className="w-full p-1 text-xs truncate max-w-[120px]">
+      <div className="w-full p-1 text-xs truncate max-w-[180px]">
         <a
           href={row.url}
           target="_blank"
