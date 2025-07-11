@@ -11,11 +11,7 @@ const Spinner = () => {
     </div>
   );
 };
-  const call=async()=>{
-    const data=await axios.get("https://reactspreadsheetnode.onrender.com");
 
-  }
-  useEffect(()=>{call()},[])
   return (
     <main>
       

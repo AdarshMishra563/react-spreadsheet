@@ -15,7 +15,7 @@ import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 
 const generateRandomKey = () => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm@#$%^&*nopqrstuvwxyz0123456789';
   let result = '';
   const length = 24;
   for (let i = 0; i < length; i++) {
@@ -66,15 +66,17 @@ const Spreadsheet = () => {
   const finalKey = paramKey || generateRandomKey();
   setKey(finalKey);
   setExportKey(finalKey);
-  }, []);
+  }, [searchParams]);
 
 
   useEffect(() => {
     const key = searchParams.get('key');
     if (key) {
+      console.log(key)
       setLoading(true);
       axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${key}`)
         .then(res => {
+          console.log(res);
           if (res.data.success) {
            
             const dataWithIds = res.data.data.data.map(row => ({
