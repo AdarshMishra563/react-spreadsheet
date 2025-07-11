@@ -1,7 +1,7 @@
 // api.js
 export const saveSpreadsheetData = async (data,key) => {
   try {
-    const response = await fetch('https://reactspreadsheetnode.onrender.com/api/spreadsheet', {
+    const response = await fetch('https://reactspreadsheetnode-1.onrender.com/api/spreadsheet', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

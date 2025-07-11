@@ -74,7 +74,7 @@ const Spreadsheet = () => {
     if (key) {
       console.log(key)
       setLoading(true);
-      axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${key}`)
+      axios.get(`https://reactspreadsheetnode-1.onrender.com/api/spreadsheet/${key}`)
         .then(res => {
           console.log(res);
           if (res.data.success) {
@@ -332,7 +332,7 @@ const Spreadsheet = () => {
   }
 
   try {
-    const result = await axios.get(`https://reactspreadsheetnode.onrender.com/api/spreadsheet/${importKey}`);
+    const result = await axios.get(`https://reactspreadsheetnode-1.onrender.com/api/spreadsheet/${importKey}`);
     if (result.data.success) {
       
       const nonEmptyImportedRows = result.data.data.data.filter(importedRow => {
